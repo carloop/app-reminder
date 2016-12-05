@@ -3,5 +3,6 @@
 #include "stdint.h"
 #include "test_time.h"
 #include "test_can.h"
+#include "test_eeprom.h"
 
 #define SYSTEM_THREAD(x)

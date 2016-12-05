@@ -1,5 +1,6 @@
 #include "application.h"
 #include "carloop/carloop.h"
+#include "interval.h"
 
 // Don't block the main program while connecting to WiFi/cellular.
 // This way the main program runs on the Carloop even outside of WiFi range.
@@ -7,6 +8,13 @@ SYSTEM_THREAD(ENABLED);
 
 // Tell the program which revision of Carloop you are using.
 Carloop<CarloopRevision2> carloop;
+
+Interval intervals[] = {
+  Interval(0),
+  Interval(1),
+  Interval(2),
+  Interval(3),
+};
 
 // Send a message at a regular time interval
 void sendMessage() {
