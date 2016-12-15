@@ -8,7 +8,13 @@
  */
 #include "application.h"
 #include "carloop/carloop.h"
-#include "storage.h"
+
+// Don't block the main program while connecting to WiFi/cellular.
+// This way the main program runs on the Carloop even outside of WiFi range.
+SYSTEM_THREAD(ENABLED);
+
+// Tell the program which revision of Carloop you are using.
+Carloop<CarloopRevision2> carloop;
 
 // Function declarations
 void publishEvent();
@@ -22,19 +28,37 @@ void updateMileage(uint8_t newVehicleSpeedKhm);
 double computeDeltaMileage(uint8_t newVehicleSpeedKhm);
 void checkIntervalLimit();
 void storeMileage();
+void loadFromStorage();
+void saveToStorage();
 
-// Don't block the main program while connecting to WiFi/cellular.
-// This way the main program runs on the Carloop even outside of WiFi range.
-SYSTEM_THREAD(ENABLED);
+// Structures
 
-// Tell the program which revision of Carloop you are using.
-Carloop<CarloopRevision2> carloop;
+/* This struct must not be re-ordered since it is the EEPROM layout.
+ * Elements must not be deleted.
+ * To remove an element, replace the name by _unused1/2/3.
+ * Elements must only be added at the end.
+ */
+struct Data {
+  uint16_t appId; // Used to make sure the EEPROM was properly initialized for this app
+  uint16_t version; // Increment in case more fields are added in a later version
+
+  double intervalCounter; // The count of miles
+  double intervalLimit; // The upper limit of miles to trigger a reminder
+  uint8_t intervalReached; // Whether a reminder must be triggered next time the Carloop is online
+};
+
+// The default values for the EEPROM on first run
+const Data DEFAULT_DATA = {
+  /* appId */ 0x4352, // Letters CR = Carloop Reminder
+  /* version */ 0,
+  /* intervalCounter */ 0.0,
+  /* intervalLimit */ 5000.0,
+  /* intervalReached */ 0,
+};
 
 // The data that is stored and loaded in permanent storage (EEPROM)
-// including the current interval count and limit
 Data data;
-// The class that will read and write the data to EEPROM
-Storage storage;
+
 // Only store to EEPROM every so often
 const auto STORAGE_PERIOD = 60 * 1000; /* every minute */
 uint32_t lastStorageTime = 0;
@@ -52,7 +76,7 @@ const auto OBD_MODE_CURRENT_DATA = 0x01;
 const auto OBD_PID_VEHICLE_SPEED = 0x0d;
 
 // Time to wait for a reply for an OBD request
-const auto OBD_TIMEOUT_MS = 10;
+const auto OBD_TIMEOUT_MS = 20;
 
 uint8_t vehicleSpeedKmh = 0;
 uint32_t lastVehicleSpeedUpdateTime = 0;
@@ -62,7 +86,7 @@ uint32_t lastVehicleSpeedUpdateTime = 0;
 void setup()
 {
   setupCloud();
-  storage.load(data);
+  loadFromStorage();
 
   // Configure the CAN bus speed for 500 kbps, the standard speed for the OBD-II port.
   // Other common speeds are 250 kbps and 1 Mbps.
@@ -85,7 +109,7 @@ int resetIntervalCounter(String)
 {
   data.intervalCounter = 0;
   data.intervalReached = 0;
-  storage.store(data);
+  saveToStorage();
   return 0;
 }
 
@@ -101,7 +125,7 @@ int changeIntervalLimit(String arg)
 
   data.intervalLimit = newLimit;
   checkIntervalLimit();
-  storage.store(data);
+  saveToStorage();
   return 0;
 }
 
@@ -116,12 +140,14 @@ void loop()
   delay(100);
 }
 
+// Request the vehicle speed through OBD and wait for the response
 void updateSpeed()
 {
   requestVehicleSpeed();
   waitForVehicleSpeedResponse();
 }
 
+// Send a PID request for the vehicle speed
 void requestVehicleSpeed()
 {
   CANMessage message;
@@ -139,10 +165,10 @@ void requestVehicleSpeed()
   carloop.can().transmit(message);
 }
 
+// Wait for the PID response with a timeout
 void waitForVehicleSpeedResponse()
 {
   uint32_t start = millis();
-  bool received = false;
   while (millis() - start < OBD_TIMEOUT_MS)
   {
     CANMessage message;
@@ -151,19 +177,19 @@ void waitForVehicleSpeedResponse()
       if (message.id == OBD_CAN_REPLY_ID &&
           message.data[2] == OBD_PID_VEHICLE_SPEED)
       {
-        received = true;
         uint8_t newVehicleSpeedKhm = message.data[3];
         updateMileage(newVehicleSpeedKhm);
+        return;
       }
     }
   }
 
-  if (!received)
-  {
-    updateMileage(0);
-  }
+  // A timeout occured
+  updateMileage(0);
 }
 
+// Update the interval counter based on the new speed and check if the
+// limit was reached
 void updateMileage(uint8_t newVehicleSpeedKhm)
 {
   double deltaMileage = computeDeltaMileage(newVehicleSpeedKhm);
@@ -172,6 +198,7 @@ void updateMileage(uint8_t newVehicleSpeedKhm)
   checkIntervalLimit();
 }
 
+// Calculate the increase in mileage given the old and new speed
 double computeDeltaMileage(uint8_t newVehicleSpeedKhm)
 {
   uint32_t now = millis();
@@ -218,13 +245,13 @@ void storeMileage()
 {
   if (millis() - lastStorageTime > STORAGE_PERIOD)
   {
-    storage.store(data);
+    saveToStorage();
     lastStorageTime = millis();
   }
 }
 
 // If we reached the limit and we're connected to the cloud through WiFi
-// or cellular, publish the event
+// or cellular, publish the event to send the reminder
 void publishEvent()
 {
   if (data.intervalReached && Particle.connected())
@@ -233,6 +260,27 @@ void publishEvent()
     Particle.publish("interval", String::format("%.0f", data.intervalLimit), PRIVATE);
     // Clear the flag avoid publishing the same event twice
     data.intervalReached = 0;
-    storage.store(data);
+    saveToStorage();
   }
 }
+
+
+// Load the data structure to EEPROM permanent storage
+void loadFromStorage()
+{
+  EEPROM.get(0, data);
+
+  // On first load, set the EEPROM to default values
+  if (data.appId != DEFAULT_DATA.appId)
+  {
+    data = DEFAULT_DATA;
+    saveToStorage();
+  }
+}
+
+// Save the data structure to EEPROM permanent storage
+void saveToStorage()
+{
+    EEPROM.put(0, data);
+}
+
