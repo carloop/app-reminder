@@ -3,33 +3,28 @@
 #include "string.h"
 #include "helpers.h"
 
-const Storage::Data Storage::DEFAULT_DATA = {
-  /* marker */ { 'C', 'L', 'R', 'M' },
+const Data Storage::DEFAULT_DATA = {
+  /* marker */ 0x4352, // Letters CR = Carloop Reminder
   /* version */ 0,
+  /* intervalCounter */ 0.0,
+  /* intervalLimit */ 5000.0,
+  /* intervalReached */ 0,
 };
 
-bool Storage::verify()
+void Storage::load(Data &data)
 {
-  Data actual;
-  EEPROM.get(0, actual);
+  EEPROM.get(0, data);
 
-  if (memcmp(actual.marker, DEFAULT_DATA.marker, member_sizeof(Data, marker)) != 0)
+  // On first load, set the EEPROM to default values
+  if (data.marker != DEFAULT_DATA.marker)
   {
-    EEPROM.put(0, DEFAULT_DATA);
-    return false;
-  }
-  else
-  {
-    return true;
+    data = DEFAULT_DATA;
+    store(data);
   }
 }
 
-void Storage::load()
+void Storage::store(Data &data)
 {
-  //for (Interval &interval : intervals)
-  //{
-
-  //}
-
+    EEPROM.put(0, data);
 }
 
