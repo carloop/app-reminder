@@ -9,10 +9,10 @@
 ################################################################################
 BUILD_DIR ?= build
 PLATFORM ?= photon
-FIRMWARE_BIN ?= $(BUILD_DIR)/reminder.bin
+FIRMWARE_BIN ?= $(BUILD_DIR)/app-reminder.bin
 firmware:
 	$(MKDIR_P) $(BUILD_DIR)
-	particle compile $(PLATFORM) src --saveTo $(FIRMWARE_BIN)
+	particle compile $(PLATFORM) firmware --saveTo $(FIRMWARE_BIN)
 
 flash:
 	particle flash --usb $(FIRMWARE_BIN)
@@ -30,9 +30,8 @@ flash:
 
 TARGET_EXEC ?= test
 
-SRC_DIRS ?= src tests
+SRC_DIRS ?= tests
 
-# Not all files are used for the unit tests, so just list the ones needed manually
 SRCS := $(shell find $(SRC_DIRS) -name *.cpp)
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)

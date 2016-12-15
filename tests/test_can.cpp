@@ -1,3 +1,4 @@
+// Test helpers to simulate sending and receiving CAN messages during tests
 #include "test_can.h"
 #include <iomanip>
 

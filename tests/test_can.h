@@ -1,3 +1,4 @@
+// Test helpers to simulate sending and receiving CAN messages during tests
 #pragma once
 #include "stdint.h"
 #include <deque>
