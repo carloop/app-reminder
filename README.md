@@ -12,7 +12,7 @@ no standard way to get the odometer miles through OBD.
 
 ## Building
 
-Copy [the application file](firmware/app-reminder.cpp) to Particle Build and add the [Carloop library](https://build.particle.io/libs/56eebf35e1b20225ce00048d)
+Copy [the application file](src/app-reminder.cpp) to Particle Build and add the [Carloop library](https://build.particle.io/libs/56eebf35e1b20225ce00048d)
 
 ## Usage
 
