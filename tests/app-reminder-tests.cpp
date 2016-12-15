@@ -3,7 +3,7 @@
 #include "catch.hpp"
 
 // Include the actual code for the application in here!
-#include "../firmware/app-reminder.cpp"
+#include "../src/app-reminder.cpp"
 
 //TEST_CASE("OBDMessage::id") {
 //  OBDMessage sut;

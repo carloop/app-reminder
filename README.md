@@ -37,6 +37,11 @@ Call one of the functions with the CLI using `particle call my_carloop limit 750
 
 Get the value of one of these variables with the CLI using `particle get my_carloop count`
 
+## Testing
+
+The app can be tested off device. Run `make tests` in the root of the
+project to run the off-device unit tests.
+
 ## License
 
 Copyright 2016 1000 Tools, Inc.
