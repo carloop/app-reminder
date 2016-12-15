@@ -12,7 +12,7 @@ public:
   using FunctionPtr = int (*)(String);
   
   void function(const char *name, const FunctionPtr ptr);
-  void variable(const char *name, double &value);
+  void variable(const char *name, float &value);
   void publish(const char *event, String data, PublishModeT mode);
   bool connected();
 

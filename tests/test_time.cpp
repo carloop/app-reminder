@@ -3,7 +3,7 @@
 
 unsigned long testMillis = 0;
 unsigned long millis() {
-  return testMillis;
+  return testMillis++;
 }
 
 void delay(unsigned long t) {

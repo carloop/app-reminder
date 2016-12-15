@@ -4,7 +4,7 @@
 void ParticleClass::function(const char *name, const ParticleClass::FunctionPtr ptr) {
 }
 
-void ParticleClass::variable(const char *name, double &value) {
+void ParticleClass::variable(const char *name, float &value) {
 }
 
 void ParticleClass::publish(const char *event, String data, PublishModeT mode) {

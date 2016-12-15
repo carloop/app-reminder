@@ -40,7 +40,7 @@ INC_DIRS := $(SRC_DIRS)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
 # Use -MMD and -MP to generate .d dependency files
-CXXFLAGS += $(INC_FLAGS) -MMD -MP -DUNIT_TEST -std=c++11
+CXXFLAGS += $(INC_FLAGS) -g -MMD -MP -DUNIT_TEST -std=c++11
 
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
 	$(CXX) $(OBJS) -o $@ $(LDFLAGS) $(LDLIBS)

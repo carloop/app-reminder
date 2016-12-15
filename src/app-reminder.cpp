@@ -85,6 +85,9 @@ uint32_t lastVehicleSpeedUpdateTime = 0;
 // Sets up the CAN bus and cloud functions
 void setup()
 {
+  vehicleSpeedKmh = 0;
+  lastVehicleSpeedUpdateTime = 0;
+
   setupCloud();
   loadFromStorage();
 
@@ -105,7 +108,7 @@ void setupCloud()
 }
 
 // Reset the interval counter and store the zero value in EEPROM
-int resetIntervalCounter(String)
+int resetIntervalCounter(String = String())
 {
   data.intervalCounter = 0;
   data.intervalReached = 0;
