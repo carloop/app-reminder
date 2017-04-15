@@ -78,6 +78,8 @@ const auto OBD_PID_VEHICLE_SPEED = 0x0d;
 // Time to wait for a reply for an OBD request
 const auto OBD_TIMEOUT_MS = 20;
 
+int obdResponseCount = 0;
+
 uint8_t vehicleSpeedKmh = 0;
 uint32_t lastVehicleSpeedUpdateTime = 0;
 
@@ -105,6 +107,7 @@ void setupCloud()
   Particle.function("reset", resetIntervalCounter);
   Particle.function("limit", changeIntervalLimit);
   Particle.variable("count", data.intervalCounter);
+  Particle.variable("msg", obdResponseCount);
 }
 
 // Reset the interval counter and store the zero value in EEPROM
@@ -182,6 +185,7 @@ void waitForVehicleSpeedResponse()
       {
         uint8_t newVehicleSpeedKhm = message.data[3];
         updateMileage(newVehicleSpeedKhm);
+        obdResponseCount++;
         return;
       }
     }
